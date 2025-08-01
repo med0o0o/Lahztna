@@ -1,86 +1,94 @@
-
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:intl/intl.dart';
+import 'dart:async';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService().init();
-  runApp(MyApp());
+void main() {
+  runApp(LahztnaApp());
 }
 
-class NotificationService {
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-
-  Future<void> init() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
-    await _flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  }
-
-  Future<void> showNotification(String title, String body) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'channelId',
-      'channelName',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
-    const NotificationDetails notificationDetails =
-        NotificationDetails(android: androidDetails);
-    await _flutterLocalNotificationsPlugin.show(0, title, body, notificationDetails);
-  }
-}
-
-class MyApp extends StatefulWidget {
+class LahztnaApp extends StatelessWidget {
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'لحظتنا',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.pink,
+        fontFamily: 'Cairo',
+      ),
+      home: LoveCounterPage(),
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
-  DateTime startDate = DateTime(2025, 5, 15, 15, 0, 0);
-  late Duration duration;
+class LoveCounterPage extends StatefulWidget {
+  @override
+  _LoveCounterPageState createState() => _LoveCounterPageState();
+}
+
+class _LoveCounterPageState extends State<LoveCounterPage> {
+  DateTime loveStartDate = DateTime(2025, 5, 15, 15, 0, 0);
+  Duration loveDuration = Duration();
+  late Timer timer;
 
   @override
   void initState() {
     super.initState();
-    duration = DateTime.now().difference(startDate);
-    Future.delayed(Duration(seconds: 1), updateTimer);
+    updateLoveDuration();
+    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      updateLoveDuration();
+    });
   }
 
-  void updateTimer() {
+  void updateLoveDuration() {
+    final now = DateTime.now();
     setState(() {
-      duration = DateTime.now().difference(startDate);
+      loveDuration = now.difference(loveStartDate);
     });
-    Future.delayed(Duration(seconds: 1), updateTimer);
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
+
+  String formatDuration(Duration d) {
+    final days = d.inDays;
+    final hours = d.inHours % 24;
+    final minutes = d.inMinutes % 60;
+    final seconds = d.inSeconds % 60;
+    return '$days يوم - $hours ساعة - $minutes دقيقة - $seconds ثانية';
   }
 
   @override
   Widget build(BuildContext context) {
-    final days = duration.inDays;
-    final hours = duration.inHours % 24;
-    final minutes = duration.inMinutes % 60;
-    final seconds = duration.inSeconds % 60;
-
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(title: Text("لحظتنا")),
-        body: Center(
+    return Scaffold(
+      backgroundColor: Colors.pink.shade50,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text("منذ تعارفكم:", style: TextStyle(fontSize: 24)),
-              Text("$days يوم - $hours ساعة - $minutes دقيقة - $seconds ثانية",
-                  style: TextStyle(fontSize: 22)),
-              SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  NotificationService().showNotification("تذكير من لحظتنا", "مرت $days يوم منذ تعارفكم!");
-                },
-                child: Text("جرب إشعار ❤️"),
+              Text(
+                '⏳ مر على لقائنا الأول:',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
+              SizedBox(height: 20),
+              Text(
+                formatDuration(loveDuration),
+                style: TextStyle(fontSize: 24, color: Colors.pink.shade900),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 40),
+              Text(
+                'منذ لحظة تعارف أليسو و فراشته ماريبوسا 🦋',
+                style: TextStyle(fontSize: 18, fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 40),
+              Icon(Icons.favorite, color: Colors.pink, size: 60),
             ],
           ),
         ),
